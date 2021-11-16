@@ -1,0 +1,8 @@
+
+
+dataset: E:/datasets/VOC-drink
+
+img_size:
+    height: 640
+
+trainset_percent: 0.9

@@ -1,4 +1,4 @@
-# 基于目标识别任务的数据集制作
+# 基于目标检测的数据集制作
 
 - [x] [数据集的制作](#数据集的制作)
 - [x] [图像标注](#图像标注)
@@ -7,112 +7,98 @@
   - [x] [转换成用于 YOLOv5 的 COCO 格式](#转换成用于-YOLOv5-的-COCO-格式)
 - [ ] [开源数据集下载](#开源数据集下载)
 
-- [基于目标识别任务的数据集制作](#基于目标识别任务的数据集制作)
+- [基于目标检测的数据集制作](#基于目标检测的数据集制作)
 - [Notes](#notes)
-- [数据集的制作](#数据集的制作)
-  - [目录管理](#目录管理)
-  - [基于视频的数据处理](#基于视频的数据处理)
-    - [视频录制与文件归档](#视频录制与文件归档)
-    - [matlab中处理视频文件](#matlab中处理视频文件)
-    - [matlab数据文件转label标注文件](#matlab数据文件转label标注文件)
-  - [基于单张图片的数据处理](#基于单张图片的数据处理)
-    - [收集数据集](#收集数据集)
-    - [数据集预处理](#数据集预处理)
-    - [格式化文件名与标注](#格式化文件名与标注)
-    - [图像标注](#图像标注)
-      - [labelImg](#labelimg)
-      - [labelImg 安装](#labelimg-安装)
-      - [labelImg 使用](#labelimg-使用)
-      - [labelImg 快捷键](#labelimg-快捷键)
+- [数据采集与归档](#数据采集与归档)
+- [数据集配置文件](#数据集配置文件)
+- [数据预处理](#数据预处理)
+- [数据标注](#数据标注)
 - [转换至可训练的标准数据集](#转换至可训练的标准数据集)
   - [转换成 VOC 格式](#转换成-voc-格式)
   - [转换成用于 YOLOv5 的 COCO 格式](#转换成用于-yolov5-的-coco-格式)
+- [基于视频的数据处理](#基于视频的数据处理)
+  - [视频录制与文件归档](#视频录制与文件归档)
+  - [matlab中处理视频文件](#matlab中处理视频文件)
+  - [matlab数据文件转label标注文件](#matlab数据文件转label标注文件)
 
-最新的版本可以下载
-```bash
-git clone https://gitee.com/whu-esdc/object-detection/tree/master/dataset-app
-```
+
 
 # Notes
-> 需要说明的是，该版本可以针对按照标注进行分类的数据进行处理，如果一张图片有多个标注，是无法处理的
+- 需要说明的是，脚本只能按照标注进行分类的数据进行处理，如果一张图片有多个标注，是无法处理的
+- 
 
-# 数据集的制作
-## 目录管理
+
+# 数据采集与归档
 > 首先要明确的是，该项目仅仅是脚本库，不包括数据集
 
-目录如下，建议将该项目放于和需要处理的数据集处于相同目录下
-```bash
-.
-├─dataset-app # 处理数据集的脚本
-├─dataset-A   # 数据集A
-├─dataset-B   # 数据集B
-└─...         # 其他数据集
-```
-需要处理其他数据集或者数据集在其他目录下，只需要在`config/config.yaml`中将`dataset`修改成对应目录即可
-```bash
-dataset: ../dataset-A
-```
-
-## 基于视频的数据处理
-### 视频录制与文件归档
-### matlab中处理视频文件
-### matlab数据文件转label标注文件
-运行脚本 `scripts/read_label_from_mat.py`，将视频目录下全部的`.label`文件转换成`labelImg`格式的`.jpg`、`.xml`文件
-```bash
-python3 scripts/read_label_from_mat.py
-```
-> 运行的时候会看到视频标注的过程，如果使用的时没有界面的服务器端，需要自行修改代码
-
-至此，就完成了视频文件的标注，接下来需要进行[转换至可训练的标准数据集](#转换至可训练的标准数据集)
-## 基于单张图片的数据处理
-### 收集数据集
-这一步，我们需要根据任务需求搜集对应的数据集，并放置在 ``dataset-A/src`` 目录下面，并且按照类别防止到对应文件夹下
+将采集到的数据放置在 `dataset-custom/src` 目录下面，并且按照类别归档至对应文件夹下，参考的文件目如下
 
 ```bash
 ·
-├── dataset-app     # 处理数据集的脚本
-├── dataset-A # 数据集文件夹
+└── dataset-custom # 数据集文件夹
+  └── src         # 原始图片文件，按照文件夹分类
+    ├─ A        # 类别 A
+    ├─ B
+    └─ ...
+```
+> 必须保证原始数据都在 `src` 内，否则脚本无法自动化处理
+
+# 数据集配置文件
+为了便于对多个数据集进行操作，我们采用配置文件 `config/*.yaml` 对多个数据集进行配置
+
+```yaml
+dataset: ~/dataset/dataset-custom
+
+img_size:
+    width: 1920
+
+trainset_percent: 0.9
+```
+
+你可以参考 `config/custom.yaml` 新建一个 `config/custom.yaml` ，并将配置参数 `dataset `修改成对应目录即可，例如
+```yaml
+dataset: ~/dataset/dataset-custom
+```
+
+在运行脚本的时候，只要加上参数 `--conf config/custom.yaml` 就可以处理多个不同的文件夹，如果不添加额外参数，则默认配置文件为 `config/custom.yaml`
+
+
+# 数据预处理
+数据集的图片的大小不能太大，需要预先压缩尺寸
+
+在配置文件 `config/custom.yaml` 中添加压缩后的图像大小，这里仅需要给定压缩后的图片
+```yaml
+img_size:
+    height: 640
+```
+执行 `scripts/resize.py`
+```bash
+python3 scripts/resize.py [--conf config/custom.yaml] [--not_rename]
+```
+运行成功后，目录内全部文件会按照目录名进行重命名并且压缩数据集，并且在 `src` 同级目录下产生 `labeled` 目录（该目录是用于标注的文件夹），在这里进行标注，例如
+```bash
+·
+└── dataset-custom # 数据集文件夹
   ├── src         # 原始图片文件，按照文件夹分类
   │ ├─ A        # 类别 A
   │ ├─ B
   │ └─ ...
-  ├─ labeled     # 压缩、重命名后的文件，在这里进行标注
-  │ ├─ A
-  │ ├─ B
-  │ └─ ...
-  ├─ VOC2012     # VOC 标准数据集，用于训练
-  └─ COCO        # COCO 标准数据集，用于训练
+  └─ labeled     # 压缩、重命名后的文件，在这里进行标注
+    ├─ A
+    ├─ B
+    └─ ...
 ```
-可以看到，目录的命名规则如上
-
-### 数据集预处理
-数据集需要进行压缩和降采样预处理
-- 数据集的图片的大小不能太大，需要预先压缩至目标size 。否则，整个完整的数据集大小会达到 `GB` 级以上，预处理的脚本在 ``scripts/rename.py`` 中
-
-
-### 格式化文件名与标注
-执行重命名脚本。
-```bash
-python ./scripts/rename.py
-```
-目录内全部文件会**按照目录名**进行重命名并且压缩数据集，并且在 `src` 同级目录下产生 `labeled` ，在这里进行标注
 
 
 - **重命名之后进行图像标注**，图像标注的过程详见 [labelImg 的使用](#图像标注)
 - 执行完之后进行可以进行[数据集转换](#转换至可训练的标准数据集)
 
-
-
-
-### 图像标注
-#### labelImg
-<!-- https://blog.csdn.net/Dontla/article/details/102662815 -->
-
+# 数据标注
 LabelImg 是图形图像注释工具。它是用 Python 编写的，并将 Qt 用于其图形界面。
 
 批注以 **PASCAL VOC** 格式（ImageNet 使用的格式）另存为 `.xml` 文件。此外，它还支持 YOLO 格式
 
-#### labelImg 安装
+
 - Github 上的 [labelImg 源码](https://github.com/tzutalin/labelImg) 编译 (Python 3+pyQt5)
 
 ```bash
@@ -131,7 +117,7 @@ pip install labelImg
 # start
 labelImg
 ```
-#### labelImg 使用
+
 在 Ubuntu 下启动后的界面如下（Windows 版本可能略有差异）
 ![start](img/labelImg-start.png)
 
@@ -154,7 +140,7 @@ labelImg
 
 完成一张图片的标注后，点击 `下一个图片`
 
-#### labelImg 快捷键
+- labelImg 快捷键
 
 | 快捷键 |           功能           | 快捷键 |       功能       |
 | :----: | :----------------------: | :----: | :--------------: |
@@ -164,6 +150,7 @@ labelImg
 | Ctrl+d |   复制当前标签和矩形框   |  del   | 删除选定的矩形框 |
 | space  |  将当前图像标记为已验证  | Ctrl+  |       放大       |
 |  ↑→↓←  | 键盘箭头移动选定的矩形框 | Ctrl–  |       缩小       |
+
 
 
 # 转换至可训练的标准数据集
@@ -186,10 +173,40 @@ labelImg
 python3 ./scripts/labeled-to-voc.py
 ```
 - 生成类别文件 `classes.names` 和训练集文件 `train.txt` 、数据集文件 `val.txt`
-
+```bash
+·
+└── dataset-custom # 数据集文件夹
+  ├── src         # 原始图片文件，按照文件夹分类
+  │ ├─ A        # 类别 A
+  │ ├─ B
+  │ └─ ...
+  ├─ labeled     # 压缩、重命名后的文件，在这里进行标注
+  │ ├─ A
+  │ ├─ B
+  │ └─ ...
+  ├─ VOC2012     # VOC 标准数据集，用于训练
+  └─ COCO        # COCO 标准数据集，用于训练
+```
 
 ## 转换成用于 YOLOv5 的 COCO 格式
 ```bash
 python3 ./scripts/labeled-to-voc.py
 python3 ./scripts/labeled-to-coco.py
 ```
+
+
+
+
+
+# 基于视频的数据处理
+## 视频录制与文件归档
+## matlab中处理视频文件
+## matlab数据文件转label标注文件
+运行脚本 `scripts/read_label_from_mat.py`，将视频目录下全部的`.label`文件转换成`labelImg`格式的`.jpg`、`.xml`文件
+```bash
+python3 scripts/read_label_from_mat.py
+```
+> 运行的时候会看到视频标注的过程，如果使用的时没有界面的服务器端，需要自行修改代码
+
+至此，就完成了视频文件的标注，接下来需要进行[转换至可训练的标准数据集](#转换至可训练的标准数据集)
+
