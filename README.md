@@ -25,21 +25,21 @@
 
 # Notes
 - 需要说明的是，脚本只能按照标注进行分类的数据进行处理，如果一张图片有多个标注，是无法处理的
-- 
+
 
 
 # 数据采集与归档
-> 首先要明确的是，该项目仅仅是脚本库，不包括数据集
+> 首先要明确的是，该项目仅仅是脚本库，不包括数据集。
 
 将采集到的数据放置在 `dataset-custom/src` 目录下面，并且按照类别归档至对应文件夹下，参考的文件目如下
 
 ```bash
 ·
-└── dataset-custom # 数据集文件夹
-  └── src         # 原始图片文件，按照文件夹分类
-    ├─ A        # 类别 A
-    ├─ B
-    └─ ...
+└── dataset-custom  # 数据集文件夹
+    └── src         # 原始图片文件，按照文件夹分类
+        ├─ A        # 类别 A
+        ├─ B
+        └─ ...
 ```
 > 必须保证原始数据都在 `src` 内，否则脚本无法自动化处理
 
@@ -75,7 +75,7 @@ img_size:
 ```bash
 python3 scripts/resize.py [--conf config/custom.yaml] [--not_rename]
 ```
-运行成功后，目录内全部文件会按照目录名进行重命名并且压缩数据集，并且在 `src` 同级目录下产生 `labeled` 目录（该目录是用于标注的文件夹），在这里进行标注，例如
+运行成功后，目录内全部文件会按照目录名进行重命名并且压缩数据集，并且在 `src` 同级目录下产生 `labeled` 目录，在这里进行标注，例如
 ```bash
 ·
 └── dataset-custom # 数据集文件夹
@@ -89,32 +89,24 @@ python3 scripts/resize.py [--conf config/custom.yaml] [--not_rename]
     └─ ...
 ```
 
+`labeled` 目录是用于后续步骤[数据标注](#数据标注)的目录，这样我们可以在不破坏原始数据对情况下完成数据处理，如果不再需要原始数据，在完成此步骤后，可以删除 `src` 目录
 
-- **重命名之后进行图像标注**，图像标注的过程详见 [labelImg 的使用](#图像标注)
-- 执行完之后进行可以进行[数据集转换](#转换至可训练的标准数据集)
 
 # 数据标注
-LabelImg 是图形图像注释工具。它是用 Python 编写的，并将 Qt 用于其图形界面。
 
-批注以 **PASCAL VOC** 格式（ImageNet 使用的格式）另存为 `.xml` 文件。此外，它还支持 YOLO 格式
+在前面步骤中生成的 `labeled` 目录是用于数据标注的目录，你可以选择使用图像注释工具 labelImg 来快速进行标注。
 
+[labelImg](https://github.com/tzutalin/labelImg) 是 Python 编写、基于 Qt 图形界面的软件，标注以 PASCAL VOC 格式（ImageNet 使用的格式）另存为 `.xml` 文件。此外，它还支持 YOLO 格式。
 
-- Github 上的 [labelImg 源码](https://github.com/tzutalin/labelImg) 编译 (Python 3+pyQt5)
-
-```bash
-sudo apt-get install pyqt5-dev-tools
-sudo pip3 install -r requirements/requirements-linux-python3.txt
-make qt5py3
-
-# start
-python3 labelImg.py
-python3 labelImg.py [IMAGE_PATH] [PRE-DEFINED CLASS FILE]
-```
-- pip安装 (推荐)
+你可以通过从[源码编译](https://github.com/tzutalin/labelImg)的方式安装，也可以通过 pip3 快速安装
 ```bash
 pip install labelImg
+```
 
-# start
+
+
+安装后，可以在命令行启动
+```bash
 labelImg
 ```
 
@@ -154,6 +146,7 @@ labelImg
 
 
 # 转换至可训练的标准数据集
+当标注完成后，我们就需要将图像和标注文件转换为我们所需要的数据格式
 - [x] [转换成 VOC 格式](#转换成-VOC-格式)
 - [x] [转换成用于 YOLOv5 的 COCO 格式](#转换成用于-YOLOv5-的-COCO-格式)
 ## 转换成 VOC 格式
