@@ -64,6 +64,7 @@ img_size:
 python3 scripts/resize.py [--conf] [--not_rename]
 # example
 python3 scripts/resize.py --conf config/custom.yaml
+python3 scripts/resize.py --conf config/custom.yaml --not_rename
 ```
 
 运行成功后，目录内全部文件会按照目录名进行重命名并且压缩数据集，并且在 `src` 同级目录下产生 `labeled` 目录，在这里进行标注，例如
@@ -163,6 +164,8 @@ labeled -> VOC  # to PASCAL VOC
 
 执行 `labeled-voc.py` 将已经标记好的数据集转化成VOC格式
 ```bash
+python3 scripts/labeled-voc.py [--conf]
+# example
 python3 scripts/labeled-voc.py
 ```
 
@@ -183,15 +186,29 @@ python3 scripts/labeled-voc.py
 ```
 
 ## 转换成用于 YOLOv5 的 COCO 格式
-转换成用于 YOLOv5 的 COCO 数据集流程如下
+转换成用于 [ultralytics/yolov5](https://github.com/ultralytics/yolov5) 的 COCO 数据集流程如下
 ```bash
 labeled -> VOC -> YOLO -> COCO  # to YOLOv5 COCO
 ```
 
-对每一次转换逐步运行
+对每一次转换逐步运行，首先从原始标注数据转换成 VOC
 ```bash
+python3 ./scripts/labeled-voc.py [--conf]
+# example
 python3 ./scripts/labeled-voc.py
+```
+
+从 VOC 转换成 YOLO
+```bash
+python3 ./scripts/voc-yolo.py [--conf]
+# example
 python3 ./scripts/voc-yolo.py
+```
+
+从 YOLO 转换成 COCO(yolov5)
+```bash
+python3 ./scripts/yolo-coco.py [--conf]
+# example
 python3 ./scripts/yolo-coco.py
 ```
 
