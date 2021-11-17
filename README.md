@@ -1,26 +1,12 @@
 # 基于目标检测的数据集制作
 
-- [x] [数据集的制作](#数据集的制作)
-- [x] [图像标注](#图像标注)
+- [x] [数据采集与归档](#数据采集与归档)
+- [x] [数据集配置文件](#数据集配置文件)
+- [x] [数据预处理](#数据预处理)
+- [x] [数据标注](#数据标注)
 - [ ] [转换至可训练的标准数据集](#转换至可训练的标准数据集)
   - [x] [转换成 VOC 格式](#转换成-VOC-格式)
   - [x] [转换成用于 YOLOv5 的 COCO 格式](#转换成用于-YOLOv5-的-COCO-格式)
-- [ ] [开源数据集下载](#开源数据集下载)
-
-- [基于目标检测的数据集制作](#基于目标检测的数据集制作)
-- [Notes](#notes)
-- [数据采集与归档](#数据采集与归档)
-- [数据集配置文件](#数据集配置文件)
-- [数据预处理](#数据预处理)
-- [数据标注](#数据标注)
-- [转换至可训练的标准数据集](#转换至可训练的标准数据集)
-  - [转换成 VOC 格式](#转换成-voc-格式)
-  - [转换成用于 YOLOv5 的 COCO 格式](#转换成用于-yolov5-的-coco-格式)
-- [基于视频的数据处理](#基于视频的数据处理)
-  - [视频录制与文件归档](#视频录制与文件归档)
-  - [matlab中处理视频文件](#matlab中处理视频文件)
-  - [matlab数据文件转label标注文件](#matlab数据文件转label标注文件)
-
 
 
 # Notes
@@ -47,18 +33,19 @@
 为了便于对多个数据集进行操作，我们采用配置文件 `config/*.yaml` 对多个数据集进行配置
 
 ```yaml
-dataset: ~/dataset/dataset-custom
+dataset: <path_to_dataset>
 
 img_size:
-    width: 1920
+    width: 640
 
-trainset_percent: 0.9
+trainset_percent: 0.8
 ```
 
 你可以参考 `config/custom.yaml` 新建一个 `config/custom.yaml` ，并将配置参数 `dataset `修改成对应目录即可，例如
 ```yaml
 dataset: ~/dataset/dataset-custom
 ```
+> 数据集的路径建议使用绝对路径
 
 在运行脚本的时候，只要加上参数 `--conf config/custom.yaml` 就可以处理多个不同的文件夹，如果不添加额外参数，则默认配置文件为 `config/custom.yaml`
 
@@ -71,22 +58,26 @@ dataset: ~/dataset/dataset-custom
 img_size:
     height: 640
 ```
+
 执行 `scripts/resize.py`
 ```bash
-python3 scripts/resize.py [--conf config/custom.yaml] [--not_rename]
+python3 scripts/resize.py [--conf] [--not_rename]
+# example
+python3 scripts/resize.py --conf config/custom.yaml
 ```
+
 运行成功后，目录内全部文件会按照目录名进行重命名并且压缩数据集，并且在 `src` 同级目录下产生 `labeled` 目录，在这里进行标注，例如
 ```bash
 ·
-└── dataset-custom # 数据集文件夹
-  ├── src         # 原始图片文件，按照文件夹分类
-  │ ├─ A        # 类别 A
-  │ ├─ B
-  │ └─ ...
-  └─ labeled     # 压缩、重命名后的文件，在这里进行标注
-    ├─ A
-    ├─ B
-    └─ ...
+└── dataset-custom  # 数据集文件夹
+    ├── src         # 原始数据，按照类别进行归档
+    │   ├── A
+    │   ├── B
+    │   └── ...
+    └── labeled     # 压缩、重命名后的文件，在这里进行标注
+        ├── A
+        ├── B
+        └── ...
 ```
 
 `labeled` 目录是用于后续步骤[数据标注](#数据标注)的目录，这样我们可以在不破坏原始数据对情况下完成数据处理，如果不再需要原始数据，在完成此步骤后，可以删除 `src` 目录
@@ -102,8 +93,6 @@ python3 scripts/resize.py [--conf config/custom.yaml] [--not_rename]
 ```bash
 pip install labelImg
 ```
-
-
 
 安装后，可以在命令行启动
 ```bash
@@ -124,7 +113,7 @@ labelImg
 - **保存**: 保存标记结果，快捷键 `Ctrl+s`
 - **数据集格式**: `PascalVOC` 和 `YOLO` 可选，一般选择 `PascalVOC` 即可，需要 `YOLO` 可以之后进行转换
 
-点击 `创建区块` 创建一个 矩形框，画出范围
+点击 `创建区块` 创建一个矩形框，画出范围
 ![rect](img/labelImg-rect-1.png)
 
 每个类别都有对应的颜色加以区分
@@ -147,10 +136,17 @@ labelImg
 
 # 转换至可训练的标准数据集
 当标注完成后，我们就需要将图像和标注文件转换为我们所需要的数据格式
+
+可用的转换流程如下
+```bash
+labeled -> VOC  # to PASCAL VOC
+            └─> YOLO -> COCO  # to YOLOv5 COCO
+```
 - [x] [转换成 VOC 格式](#转换成-VOC-格式)
 - [x] [转换成用于 YOLOv5 的 COCO 格式](#转换成用于-YOLOv5-的-COCO-格式)
+
+
 ## 转换成 VOC 格式
-制作过程由脚本自动完成
 
 <!-- **VOC2012** 数据集描述：
 - **Annotations**: 存放了数据`xml`格式存储的标签，里面包含了每张图片的`bounding box`信息，主要用于**目标检测**。
@@ -160,35 +156,60 @@ labelImg
 - **SegmentationObject**: 实例分割任务用到的label图片，在语义分割中用不到，这里不详解介绍。
 --- -->
 
-
-- 生成VOC格式的数据集空目录。在当前目录下，执行
+转换成 VOC 数据集流程如下
 ```bash
-python3 ./scripts/labeled-to-voc.py
+labeled -> VOC  # to PASCAL VOC
 ```
-- 生成类别文件 `classes.names` 和训练集文件 `train.txt` 、数据集文件 `val.txt`
+
+执行 `labeled-voc.py` 将已经标记好的数据集转化成VOC格式
+```bash
+python3 scripts/labeled-voc.py
+```
+
+运行后会在 VOC 目录下类别文件 `classes.names` 和训练集文件 `train.txt` 、验证集文件 `val.txt`
 ```bash
 ·
-└── dataset-custom # 数据集文件夹
-  ├── src         # 原始图片文件，按照文件夹分类
-  │ ├─ A        # 类别 A
-  │ ├─ B
-  │ └─ ...
-  ├─ labeled     # 压缩、重命名后的文件，在这里进行标注
-  │ ├─ A
-  │ ├─ B
-  │ └─ ...
-  ├─ VOC2012     # VOC 标准数据集，用于训练
-  └─ COCO        # COCO 标准数据集，用于训练
+└── dataset-custom  # 数据集文件夹
+    ├── src         # 原始数据，按照类别进行归档
+    ├── labeled     # 压缩、重命名后的文件，在这里进行标注
+    └── VOC         # VOC 标准数据集，用于训练
+        ├── Annotations
+        ├── ImageSets
+        │   └── Main
+        │       ├── classes.names
+        │       ├── train.txt
+        │       └── val.txt
+        └── JPEGImages            
 ```
 
 ## 转换成用于 YOLOv5 的 COCO 格式
+转换成用于 YOLOv5 的 COCO 数据集流程如下
 ```bash
-python3 ./scripts/labeled-to-voc.py
-python3 ./scripts/labeled-to-coco.py
+labeled -> VOC -> YOLO -> COCO  # to YOLOv5 COCO
 ```
 
+对每一次转换逐步运行
+```bash
+python3 ./scripts/labeled-voc.py
+python3 ./scripts/voc-yolo.py
+python3 ./scripts/yolo-coco.py
+```
 
-
+运行后得到 YOLOv5 的 COCO 数据集，包含 `images`,`labels` 目录，目录下分别包含子目录 `train`,`val` 
+```bash
+·
+└── dataset-custom  # 数据集文件夹
+    ├── src         # 原始数据，按照类别进行归档
+    ├── labeled     # 压缩、重命名后的文件，在这里进行标注
+    ├── VOC         # VOC 数据集，用于训练
+    └── coco        # coco 数据集，用于训练
+        ├── images
+        │   ├── train
+        │   └── val
+        └── labels   
+            ├── train
+            └── val
+```
 
 
 # 基于视频的数据处理

@@ -1,6 +1,6 @@
 
 
-dataset: E:/datasets/VOC-drink
+dataset: ~/dataset/drink
 
 img_size:
     height: 640

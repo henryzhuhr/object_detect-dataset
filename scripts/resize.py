@@ -8,20 +8,17 @@ from PIL import Image
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--conf", type=str, default='config/custom.yaml')
-    parser.add_argument("--not_rename", action='store_true')
+    parser.add_argument('--conf', type=str, default='config/custom.yaml')
+    parser.add_argument('--not_rename', action='store_true')
     args = parser.parse_args()
     if not os.path.exists(args.conf):
         raise FileNotFoundError('"%s" not found' % args.conf)
-    return {
-        'conf': args.conf,
-        'not_rename': args.not_rename,
-    }
+    return args
 
 
 ARGS = parse_args()
-CONFIG_FILE: str = ARGS['conf']
-IS_RENAME: bool = not ARGS['not_rename']
+CONFIG_FILE: str = ARGS.conf
+IS_RENAME: bool = not ARGS.not_rename
 
 
 def isImage(file_path: str) -> bool:
@@ -32,7 +29,7 @@ with open(CONFIG_FILE, 'r') as f:
     configs = yaml.full_load(f)
     if 'dataset' not in configs:
         raise KeyError("key 'dataset' is not defined in '%s'" % CONFIG_FILE)
-    print('Process dataset: %s' % configs['dataset'])
+    print(chr(128640),'Process dataset: %s' % configs['dataset'])
     img_dir = os.path.join(configs['dataset'], 'src')
     ren_dir = os.path.join(configs['dataset'], 'labeled')
     if 'img_size' not in configs:
@@ -54,8 +51,10 @@ def copy_file(file, class_name, index, is_rename=True):
 
 
 for class_name in os.listdir(img_dir):
+    if not os.path.isdir(os.path.join(img_dir,class_name)):
+        continue
     print()
-    print(' -- Process Class: %s' % class_name)
+    print(' -- Copy Class: %s' % class_name)
     src_class_dir = os.path.join(img_dir, class_name)
     ren_class_dir = os.path.join(ren_dir, class_name)
 
