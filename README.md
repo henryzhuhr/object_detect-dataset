@@ -11,11 +11,11 @@
 
 # Notes
 - 需要说明的是，脚本只能按照标注进行分类的数据进行处理，如果一张图片有多个标注，是无法处理的
+- 该项目仅仅是脚本库，不包括数据集
 
 
 
 # 数据采集与归档
-> 首先要明确的是，该项目仅仅是脚本库，不包括数据集。
 
 将采集到的数据放置在 `dataset-custom/src` 目录下面，并且按照类别归档至对应文件夹下，参考的文件目如下
 
@@ -27,7 +27,7 @@
         ├─ B
         └─ ...
 ```
-> 必须保证原始数据都在 `src` 内，否则脚本无法自动化处理
+> 必须保证原始数据都在 `src` 内，否则运行会报错
 
 # 数据集配置文件
 为了便于对多个数据集进行操作，我们采用配置文件 `config/*.yaml` 对多个数据集进行配置
@@ -47,7 +47,7 @@ dataset: ~/dataset/dataset-custom
 ```
 > 数据集的路径建议使用绝对路径
 
-在运行脚本的时候，只要加上参数 `--conf config/custom.yaml` 就可以处理多个不同的文件夹，如果不添加额外参数，则默认配置文件为 `config/custom.yaml`
+在运行脚本的时候，只要加上参数 `--conf` 就可以处理多个不同的文件夹，如果不添加额外参数，则默认配置文件为 `config/custom.yaml`
 
 
 # 数据预处理
@@ -86,7 +86,7 @@ python3 scripts/resize.py --conf config/custom.yaml --not_rename
 
 # 数据标注
 
-在前面步骤中生成的 `labeled` 目录是用于数据标注的目录，你可以选择使用图像注释工具 labelImg 来快速进行标注。
+在前面步骤中生成的 `labeled` 目录是用于数据标注的目录，选择图像注释工具 labelImg 进行标注。
 
 [labelImg](https://github.com/tzutalin/labelImg) 是 Python 编写、基于 Qt 图形界面的软件，标注以 PASCAL VOC 格式（ImageNet 使用的格式）另存为 `.xml` 文件。此外，它还支持 YOLO 格式。
 
@@ -191,21 +191,21 @@ python3 scripts/labeled-voc.py
 labeled -> VOC -> YOLO -> COCO  # to YOLOv5 COCO
 ```
 
-对每一次转换逐步运行，首先从原始标注数据转换成 VOC
+对每一次转换逐步运行，首先执行 `labeled-voc.py` 将数据集从从原始标注数据转换成 VOC
 ```bash
 python3 ./scripts/labeled-voc.py [--conf]
 # example
 python3 ./scripts/labeled-voc.py
 ```
 
-从 VOC 转换成 YOLO
+执行 `voc-yolo.py` 将数据集从 VOC 转换成 YOLO
 ```bash
 python3 ./scripts/voc-yolo.py [--conf]
 # example
 python3 ./scripts/voc-yolo.py
 ```
 
-从 YOLO 转换成 COCO(yolov5)
+执行 `yolo-coco.py` 将数据集从 YOLO 转换成 COCO (yolov5)
 ```bash
 python3 ./scripts/yolo-coco.py [--conf]
 # example
@@ -218,7 +218,6 @@ python3 ./scripts/yolo-coco.py
 └── dataset-custom  # 数据集文件夹
     ├── src         # 原始数据，按照类别进行归档
     ├── labeled     # 压缩、重命名后的文件，在这里进行标注
-    ├── VOC         # VOC 数据集，用于训练
     └── coco        # coco 数据集，用于训练
         ├── images
         │   ├── train
@@ -239,5 +238,4 @@ python3 scripts/read_label_from_mat.py
 ```
 > 运行的时候会看到视频标注的过程，如果使用的时没有界面的服务器端，需要自行修改代码
 
-至此，就完成了视频文件的标注，接下来需要进行[转换至可训练的标准数据集](#转换至可训练的标准数据集)
 
