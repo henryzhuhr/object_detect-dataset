@@ -28,6 +28,8 @@ with open(CONFIG_FILE, 'r') as f:
         raise KeyError("%s key 'dataset' is not defined in '%s'" %
                        (chr(128561), CONFIG_FILE))
     DATASET = configs['dataset']
+    if DATASET[0]=='~':
+        DATASET=os.path.expanduser('~')+DATASET[1:]
     if 'trainset_percent' not in configs:
         raise KeyError("%s key 'trainset_percent' is not defined in '%s'" %
                        (chr(128561), CONFIG_FILE))

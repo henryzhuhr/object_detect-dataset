@@ -1,6 +1,6 @@
 
 
-dataset: ~/dataset/drink
+dataset: ~/datasets/drink
 
 img_size:
     height: 640
